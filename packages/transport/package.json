@@ -8,7 +8,9 @@
   },
   "dependencies": {
     "ws": "^8.16.0",
-    "@video-light-sync/core": "workspace:*"
+    "@video-light-sync/core": "workspace:*",
+    "@video-light-sync/adapters-base": "workspace:*",
+    "@video-light-sync/adapters-yeelight": "workspace:*"
   },
   "devDependencies": {
     "@types/ws": "^8.5.10"

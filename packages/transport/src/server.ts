@@ -1,13 +1,22 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { LightState } from '@video-light-sync/core';
+import { LightAdapter } from '@video-light-sync/adapters-base';
 
 export class LightSyncServer {
   private wss: WebSocketServer;
   private port: number;
+  private adapters: LightAdapter[] = [];
 
-  constructor(port: number = 3001) {
+  constructor(port: number = 3001, adapters: LightAdapter[] = []) {
     this.port = port;
+    this.adapters = adapters;
     this.wss = new WebSocketServer({ port: this.port });
+    
+    // init adapters
+    this.adapters.forEach(a => {
+      console.log(`Initializing adapter: ${a.name}`);
+      if (a.init) a.init();
+    });
     
     this.wss.on('connection', (ws) => {
       console.log('Client connected');
@@ -33,8 +42,13 @@ export class LightSyncServer {
   }
 
   private onLightState(state: LightState) {
-    // This hook will be used by adapters later
-    // For now, we just log it for verification
+    // Broadcast to all adapters
+    this.adapters.forEach(adapter => {
+      adapter.sync(state).catch(err => {
+        console.error(`Error syncing adapter ${adapter.name}:`, err);
+      });
+    });
+
     // Throttle logging
     if (Math.random() < 0.01) {
       console.log('Received state:', state);

@@ -1,0 +1,16 @@
+{
+  "name": "@video-light-sync/adapters-yeelight",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./src/YeelightAdapter.ts",
+  "exports": {
+    ".": "./src/YeelightAdapter.ts"
+  },
+  "dependencies": {
+    "@video-light-sync/adapters-base": "workspace:*",
+    "@video-light-sync/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0"
+  }
+}
