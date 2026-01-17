@@ -3,6 +3,8 @@
   "private": true,
   "description": "Video Light Sync Monorepo",
   "scripts": {
+    "dev:all": "./run-all.sh",
+    "test:all": "./test-all.sh",
     "dev": "pnpm -r dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",

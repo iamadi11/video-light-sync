@@ -1,38 +1,62 @@
 import { LightState } from '@video-light-sync/core';
 import { TemporalSmoother } from './TemporalSmoother';
 
+export interface FrameProcessorOptions {
+  sampleStride?: number;
+  width?: number;
+  height?: number;
+  fps?: number; // Used for potential throttling internally if needed
+}
+
 export class FrameProcessor {
-  // Optimization: Only process every Nth pixel to save CPU
   private sampleStride: number;
+  private width: number;
+  private height: number;
   private smoother: TemporalSmoother;
   private lastSentState: LightState | null = null;
 
   // Thresholds
-  private rgbThreshold = 5; // cumulative RGB difference required
-  private brightnessThreshold = 0.05; // 5% brightness diff required
+  private rgbThreshold = 5; 
+  private brightnessThreshold = 0.05; 
 
-  constructor(options: { sampleStride?: number } = {}) {
+  constructor(options: FrameProcessorOptions = {}) {
     this.sampleStride = options.sampleStride || 4;
-    this.smoother = new TemporalSmoother(0.15); // Fairly smooth
+    this.width = options.width || 100;
+    this.height = options.height || 50;
+    
+    // Validate inputs
+    if (this.sampleStride < 1) throw new Error('sampleStride must be >= 1');
+    if (this.width < 1 || this.height < 1) throw new Error('Invalid frame dimensions');
+
+    this.smoother = new TemporalSmoother(0.15); 
   }
 
-  process(canvas: HTMLCanvasElement | OffscreenCanvas): LightState | null {
-    const width = canvas.width;
-    const height = canvas.height;
-    
-    // In a real optimized scenario, we might caching the context or use WebGL.
-    // For now, getting 2d context is fine for 10-20Hz on reasonably small buffers (e.g. 300x150).
-    // Note: OffscreenCanvas and HTMLCanvasElement have getContext but typing can be tricky.
-    // We assume the upstream FrameBuffer provided a canvas that can return a 2D context.
-    const ctx = (canvas as any).getContext('2d', { willReadFrequently: true });
-    
-    if (!ctx) {
-      throw new Error('Could not get context for frame processing');
-    }
+  process(canvas: HTMLCanvasElement | OffscreenCanvas | ImageData): LightState | null {
+    let data: Uint8ClampedArray;
+    let width: number;
+    let height: number;
 
-    // Get pixel data
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
+    // Support flexible inputs
+    if (canvas instanceof ImageData) {
+      data = canvas.data;
+      width = canvas.width;
+      height = canvas.height;
+    } else {
+        width = canvas.width;
+        height = canvas.height;
+        // Basic validation of incoming frame size to match expected config
+        // This acts as a runtime check for the buffer logic upstream
+        if (width !== this.width || height !== this.height) {
+           console.warn(`[FrameProcessor] Input size ${width}x${height} does not match config ${this.width}x${this.height}. Processing might be slow or incorrect.`);
+        }
+
+        const ctx = (canvas as any).getContext('2d', { willReadFrequently: true });
+        if (!ctx) {
+          throw new Error('Could not get context for frame processing');
+        }
+        const imageData = ctx.getImageData(0, 0, width, height);
+        data = imageData.data;
+    }
     
     let r = 0, g = 0, b = 0;
     let count = 0;
@@ -45,20 +69,17 @@ export class FrameProcessor {
       count++;
     }
 
+    if (count === 0) return null;
+
     // Average
     r = Math.floor(r / count);
     g = Math.floor(g / count);
     b = Math.floor(b / count);
 
-    // Calculate Brightness (Simple max component or luminance)
-    // Using perceived luminance: 0.299R + 0.587G + 0.114B
+    // Calculate Brightness
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 
-    // Calculate Warmth (Simplified)
-    // High Red + Low Blue = Warm. High Blue = Cool.
-    // Let's normalize R and B balance to 0-1.
-    // 0.5 is neutral. > 0.5 is warm, < 0.5 is cool.
-    // This is a heuristic.
+    // Calculate Warmth
     let warmth = 0.5;
     if (r + b > 0) {
       warmth = r / (r + b); 
@@ -74,7 +95,7 @@ export class FrameProcessor {
     // Smooth
     const smoothedState = this.smoother.smooth(rawState);
 
-    // Diff Check (Optimization)
+    // Diff Check
     if (this.lastSentState) {
         const dR = Math.abs(smoothedState.rgb[0] - this.lastSentState.rgb[0]);
         const dG = Math.abs(smoothedState.rgb[1] - this.lastSentState.rgb[1]);
@@ -82,11 +103,11 @@ export class FrameProcessor {
         const dBri = Math.abs(smoothedState.brightness - this.lastSentState.brightness);
 
         if ((dR + dG + dB) < this.rgbThreshold && dBri < this.brightnessThreshold) {
-            // Change is too small, ignore
             return null; 
         }
     }
-
+    
+    this.lastSentState = smoothedState;
     return smoothedState;
   }
 

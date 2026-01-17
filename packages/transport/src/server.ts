@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import { LightState, ZLightState, ZServerMessage } from '@video-light-sync/core';
+import { LightState, ZLightState, ZServerMessage, NetworkConfig } from '@video-light-sync/core';
 import { LightAdapter } from '@video-light-sync/adapters-base';
 
 export class LightSyncServer {
@@ -7,10 +7,10 @@ export class LightSyncServer {
   private port: number;
   private adapters: LightAdapter[] = [];
 
-  constructor(port: number = 3001, adapters: LightAdapter[] = []) {
-    this.port = port;
+  constructor(config: NetworkConfig | number, adapters: LightAdapter[] = []) {
+    this.port = typeof config === 'number' ? config : config.port;
     this.adapters = adapters;
-    this.wss = new WebSocketServer({ port: this.port });
+    this.wss = new WebSocketServer({ port: this.port, host: typeof config === 'object' ? config.host : undefined });
     
     // init adapters
     this.adapters.forEach(a => {

@@ -8,11 +8,12 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "ws": "^8.16.0",
-    "@video-light-sync/core": "workspace:*",
     "@video-light-sync/adapters-base": "workspace:*",
+    "@video-light-sync/adapters-wled": "workspace:*",
     "@video-light-sync/adapters-yeelight": "workspace:*",
-    "@video-light-sync/adapters-wled": "workspace:*"
+    "@video-light-sync/core": "workspace:*",
+    "dotenv": "^16.3.1",
+    "ws": "^8.16.0"
   },
   "devDependencies": {
     "@types/ws": "^8.5.10",

@@ -3,6 +3,10 @@ import { ScreenRecorder } from './capture/ScreenRecorder';
 import { FrameBuffer } from './capture/FrameBuffer';
 import { FrameProcessor } from '@video-light-sync/vision';
 import { StreamClient } from '@video-light-sync/transport';
+import { parseConfig } from '@video-light-sync/core';
+
+// Load config using Vite's env injection
+const config = parseConfig(import.meta.env);
 
 function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -17,17 +21,24 @@ function App() {
 
   useEffect(() => {
     if (videoRef.current && !recorder) {
+      console.log('Initializing with config:', config);
       const rec = new ScreenRecorder(videoRef.current);
       setRecorder(rec);
 
-      const buf = new FrameBuffer(100, 50); 
+      const buf = new FrameBuffer(config.vision.width, config.vision.height); 
       setFrameBuffer(buf);
       
-      const proc = new FrameProcessor({ sampleStride: 4 });
+      const proc = new FrameProcessor({ 
+        sampleStride: config.vision.sampleStride,
+        width: config.vision.width,
+        height: config.vision.height,
+        fps: config.vision.fps
+      });
       setProcessor(proc);
 
       // Connect to local transport server
-      const streamClient = new StreamClient('ws://localhost:3001');
+      const wsUrl = `ws://${config.network.host}:${config.network.port}`;
+      const streamClient = new StreamClient(wsUrl);
       streamClient.connect();
       setClient(streamClient);
 
@@ -50,9 +61,8 @@ function App() {
       if (lightState) {
         client.sendState(lightState);
       }
-
-      if (Math.random() < 0.01) { 
-         // Console log less frequently now that we are streaming
+      // Log based on parsed level - simplistic check
+      if (config.logLevel === 'debug' && Math.random() < 0.01) { 
          console.log('Streaming State:', lightState);
       }
     }

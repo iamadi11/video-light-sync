@@ -12,6 +12,12 @@ export class YeelightAdapter implements LightAdapter {
   private requestId: number = 1;
   private isConnected: boolean = false;
   private lastUpdate: number = 0;
+  
+  // Retry logic
+  private retryCount = 0;
+  private maxRetries = 5;
+  private retryDelayMs = 2000;
+  private reconnecting = false;
 
   constructor(ip: string | null = null, port: number = 55443) {
     this.ip = ip;
@@ -25,29 +31,70 @@ export class YeelightAdapter implements LightAdapter {
       console.log(`[${this.name}] Initialized in MOCK MODE. Commands will be logged.`);
       return;
     }
+    await this.connect();
+  }
 
+  private connect(): Promise<void> {
+    if (!this.ip) return Promise.resolve();
+    
     return new Promise((resolve) => {
       this.client = new net.Socket();
       
+      // Set timeout for initial connection
+      this.client.setTimeout(3000);
+
       this.client.connect(this.port, this.ip!, () => {
         console.log(`[${this.name}] Connected to bulb at ${this.ip}`);
         this.isConnected = true;
+        this.retryCount = 0;
+        this.reconnecting = false;
         resolve();
       });
 
       this.client.on('error', (err) => {
-        console.error(`[${this.name}] Connection error:`, err.message);
-        console.log(`[${this.name}] Falling back to MOCK MODE.`);
-        this.isConnected = false;
-        this.ip = null; // Fallback
-        resolve(); // Resolve anyway so app startup continues
+        console.error(`[${this.name}] Connection error: ${err.message}`);
+        this.handleDisconnect();
+        resolve(); // Resolve to not block startup
+      });
+      
+      this.client.on('timeout', () => {
+         console.error(`[${this.name}] Connection timeout`);
+         this.client?.destroy();
+         this.handleDisconnect();
+         resolve();
       });
 
       this.client.on('close', () => {
-        console.log(`[${this.name}] Connection closed`);
+        if (this.isConnected) {
+            console.log(`[${this.name}] Connection closed`);
+        }
         this.isConnected = false;
+        // If not intentionally closed (logic could be added), try reconnect?
+        // For now rely on manual or periodic checks, or just stay disconnected.
+        // Actually, let's try auto-reconnect if it was a drop.
+        if (!this.reconnecting) {
+            this.handleDisconnect();
+        }
       });
     });
+  }
+
+  private handleDisconnect() {
+      this.isConnected = false;
+      if (this.retryCount < this.maxRetries) {
+          this.reconnecting = true;
+          this.retryCount++;
+          const delay = this.retryCount * this.retryDelayMs;
+          console.log(`[${this.name}] Reconnecting in ${delay}ms (Attempt ${this.retryCount}/${this.maxRetries})...`);
+          setTimeout(() => {
+              this.connect().catch(e => console.error(e));
+          }, delay);
+      } else {
+          console.warn(`[${this.name}] Max retries reached. Falling back to MOCK MODE or staying offline.`);
+          this.reconnecting = false;
+          // Could fallback to mock mode here transparently?
+          // this.ip = null; 
+      }
   }
 
   async sync(state: LightState): Promise<void> {
@@ -63,11 +110,7 @@ export class YeelightAdapter implements LightAdapter {
     // Brightness 0-100
     const bright = Math.max(1, Math.min(100, Math.floor(state.brightness * 100)));
 
-    if (this.ip && this.isConnected && this.client) {
-      // Send real command
-      // We use "set_scene" ["color", rgb, brightness] for smoothest transitions if supported,
-      // or set_rgb + set_bright. 
-      // "set_rgb" command: [rgb_value, "smooth", duration]
+    if (this.ip && this.isConnected && this.client && !this.client.destroyed) {
       const duration = 300; // 300ms smoothing
       const cmd = {
         id: this.requestId++,
@@ -76,23 +119,22 @@ export class YeelightAdapter implements LightAdapter {
       };
       
       try {
-        this.client.write(JSON.stringify(cmd) + '\r\n', (err) => {
-          if (err) console.error(`[${this.name}] Write error:`, err);
+        const payload = JSON.stringify(cmd) + '\r\n';
+        this.client.write(payload, (err) => {
+          if (err) {
+              console.error(`[${this.name}] Write error:`, err);
+              this.handleDisconnect();
+          }
         });
       } catch (e) {
         console.error(`[${this.name}] Socket exception:`, e);
-        this.isConnected = false; // Mark as down so we reconnect/init again if we had robustness logic
+        this.handleDisconnect();
       }
-      
-      // Also set brightness if it changed significantly? 
-      // Yeelight set_rgb uses current brightness unless we use set_scene.
-      // For simplicity in Phase 4, we just send set_rgb which looks cool.
       
     } else {
       // Mock log
-      // Only log occasionally to avoid spam
       if (Math.random() < 0.05) {
-         console.log(`[${this.name}] Syncing: RGB(0x${rgbInt.toString(16)}) Bright(${bright}%)`);
+         console.log(`[${this.name}] [MOCK/OFFLINE] Syncing: RGB(0x${rgbInt.toString(16)}) Bright(${bright}%)`);
       }
     }
   }

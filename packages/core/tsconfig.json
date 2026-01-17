@@ -1,9 +1,9 @@
 {
   "extends": "../../tools/tsconfig.base.json",
-  "compilerOptions": {
     "outDir": "dist",
     "noEmit": false,
-    "allowImportingTsExtensions": false
+    "allowImportingTsExtensions": false,
+    "composite": true
   },
   "include": ["src"],
   "exclude": ["src/**/*.test.ts"]
