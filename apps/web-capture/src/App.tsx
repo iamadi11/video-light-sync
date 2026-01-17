@@ -2,13 +2,16 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ScreenRecorder } from './capture/ScreenRecorder';
 import { FrameBuffer } from './capture/FrameBuffer';
 import { FrameProcessor } from '@video-light-sync/vision';
+import { StreamClient } from '@video-light-sync/transport';
 
 function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const debugRef = useRef<HTMLDivElement>(null);
+  
   const [recorder, setRecorder] = useState<ScreenRecorder | null>(null);
   const [frameBuffer, setFrameBuffer] = useState<FrameBuffer | null>(null);
   const [processor, setProcessor] = useState<FrameProcessor | null>(null);
+  const [client, setClient] = useState<StreamClient | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const requestRef = useRef<number>();
 
@@ -17,11 +20,16 @@ function App() {
       const rec = new ScreenRecorder(videoRef.current);
       setRecorder(rec);
 
-      const buf = new FrameBuffer(100, 50); // Small buffer for performance
+      const buf = new FrameBuffer(100, 50); 
       setFrameBuffer(buf);
       
       const proc = new FrameProcessor({ sampleStride: 4 });
       setProcessor(proc);
+
+      // Connect to local transport server
+      const streamClient = new StreamClient('ws://localhost:3001');
+      streamClient.connect();
+      setClient(streamClient);
 
       if (debugRef.current) {
         buf.mountDebug(debugRef.current);
@@ -34,17 +42,16 @@ function App() {
   }, [videoRef]);
 
   const loop = () => {
-    if (videoRef.current && frameBuffer && processor) {
-      // 1. Write video frame to buffer
+    if (videoRef.current && frameBuffer && processor && client) {
       frameBuffer.write(videoRef.current);
-
-      // 2. Read buffer and calculate LightState
       const lightState = processor.process(frameBuffer.getCanvas());
       
-      // Validation log (throttled visually but calculate every frame)
-      // For now, spamming console is fine for validation phase
-      if (Math.random() < 0.05) { // Log 5% of frames to avoid laggy console
-         console.log('LightState:', lightState);
+      // Send to server
+      client.sendState(lightState);
+
+      if (Math.random() < 0.01) { 
+         // Console log less frequently now that we are streaming
+         console.log('Streaming State:', lightState);
       }
     }
     requestRef.current = requestAnimationFrame(loop);

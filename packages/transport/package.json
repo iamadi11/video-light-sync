@@ -1,0 +1,19 @@
+{
+  "name": "@video-light-sync/transport",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "ws": "^8.16.0",
+    "@video-light-sync/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.10"
+  },
+  "scripts": {
+    "start-server": "node --loader ts-node/esm ./src/server-runner.ts" 
+  }
+}
