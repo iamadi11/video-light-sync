@@ -42,6 +42,14 @@ export class LightSyncServer {
   }
 
   private onLightState(state: LightState) {
+    // Broadcast to all connected clients (Controllers, future Desktop app, etc)
+    const msg = JSON.stringify(state);
+    this.wss.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(msg);
+      }
+    });
+
     // Broadcast to all adapters
     this.adapters.forEach(adapter => {
       adapter.sync(state).catch(err => {

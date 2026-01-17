@@ -9,6 +9,8 @@ export class StreamClient {
     this.url = url;
   }
 
+  private stateCallback: ((state: LightState) => void) | null = null;
+
   connect() {
     console.log(`Connecting to ${this.url}...`);
     this.ws = new WebSocket(this.url);
@@ -16,6 +18,17 @@ export class StreamClient {
     this.ws.onopen = () => {
       console.log('Connected to LightSync Server');
       this.isConnected = true;
+    };
+
+    this.ws.onmessage = (event) => {
+      if (this.stateCallback) {
+        try {
+          const state = JSON.parse(event.data.toString()) as LightState;
+          this.stateCallback(state);
+        } catch (e) {
+          console.error('Error parsing incoming state:', e);
+        }
+      }
     };
 
     this.ws.onclose = () => {
@@ -27,6 +40,10 @@ export class StreamClient {
     this.ws.onerror = (err) => {
       console.error('WebSocket error:', err);
     };
+  }
+
+  onState(callback: (state: LightState) => void) {
+    this.stateCallback = callback;
   }
 
   sendState(state: LightState) {
