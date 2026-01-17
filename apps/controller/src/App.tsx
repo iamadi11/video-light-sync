@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StreamClient } from '@video-light-sync/transport';
-import { LightState } from '@video-light-sync/core';
+import { LightState, LightDevice } from '@video-light-sync/core';
 
 const PRESETS: { label: string; state: LightState }[] = [
   { label: 'Warm White', state: { timestamp: 0, rgb: [255, 200, 100], brightness: 0.8, warmth: 0.8 } },
@@ -13,14 +13,19 @@ const PRESETS: { label: string; state: LightState }[] = [
 function App() {
   const [client, setClient] = useState<StreamClient | null>(null);
   const [currentState, setCurrentState] = useState<LightState | null>(null);
+  const [devices, setDevices] = useState<LightDevice[]>([]);
 
   useEffect(() => {
     const c = new StreamClient('ws://localhost:3001');
     c.connect();
     
-    // Listen for updates from other sources (e.g. web-capture)
     c.onState((state) => {
       setCurrentState(state);
+    });
+
+    c.onDeviceList((list) => {
+      console.log('Received device list:', list);
+      setDevices(list);
     });
 
     setClient(c);
@@ -47,44 +52,80 @@ function App() {
       color: '#fff',
       transition: 'background-color 0.2s',
       display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 20
+      flexDirection: 'row'
     }}>
-      <div style={{ 
-        background: 'rgba(0,0,0,0.7)', 
-        padding: 40, 
-        borderRadius: 20,
-        textAlign: 'center',
-        backdropFilter: 'blur(10px)'
+      {/* Sidebar */}
+      <div style={{
+        width: 250,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        backdropFilter: 'blur(10px)',
+        padding: 20,
+        borderRight: '1px solid rgba(255,255,255,0.1)'
       }}>
-        <h1>Video Light Sync Controller</h1>
-        
-        <div style={{ margin: '20px 0' }}>
-          <h3>Current State</h3>
-          {currentState ? (
-            <div style={{ textAlign: 'left' }}>
-              <p>Brightness: {Math.round(currentState.brightness * 100)}%</p>
-              <p>Warmth: {Math.round(currentState.warmth * 100)}%</p>
-              <p>RGB: {currentState.rgb.join(', ')}</p>
-            </div>
-          ) : (
-            <p>Waiting for data...</p>
-          )}
-        </div>
+        <h3>Connected Lights</h3>
+        {devices.length === 0 ? (
+          <p style={{ opacity: 0.6 }}>Scanning...</p>
+        ) : (
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {devices.map(d => (
+              <li key={d.id} style={{ 
+                marginBottom: 10, 
+                padding: 10, 
+                backgroundColor: 'rgba(255,255,255,0.1)', 
+                borderRadius: 8,
+                fontSize: 14 
+              }}>
+                <div style={{ fontWeight: 'bold' }}>{d.name}</div>
+                <div style={{ fontSize: 12, opacity: 0.7 }}>{d.type} • {d.status}</div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
-        <h3>Manual Overrides</h3>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {PRESETS.map((p) => (
-            <button
-              key={p.label}
-              onClick={() => sendState(p.state)}
-              style={{ padding: '10px 20px', cursor: 'pointer', fontSize: 16 }}
-            >
-              {p.label}
-            </button>
-          ))}
+      {/* Main Content */}
+      <div style={{ 
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20
+      }}>
+        <div style={{ 
+          background: 'rgba(0,0,0,0.7)', 
+          padding: 40, 
+          borderRadius: 20,
+          textAlign: 'center',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <h1>Video Light Sync Controller</h1>
+          
+          <div style={{ margin: '20px 0' }}>
+            <h3>Current State</h3>
+            {currentState ? (
+              <div style={{ textAlign: 'left' }}>
+                <p>Brightness: {Math.round(currentState.brightness * 100)}%</p>
+                <p>Warmth: {Math.round(currentState.warmth * 100)}%</p>
+                <p>RGB: {currentState.rgb.join(', ')}</p>
+              </div>
+            ) : (
+              <p>Waiting for data...</p>
+            )}
+          </div>
+
+          <h3>Manual Overrides</h3>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {PRESETS.map((p) => (
+              <button
+                key={p.label}
+                onClick={() => sendState(p.state)}
+                style={{ padding: '10px 20px', cursor: 'pointer', fontSize: 16 }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

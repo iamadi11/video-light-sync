@@ -3,7 +3,9 @@ import { LightState } from '@video-light-sync/core';
 import { LightAdapter } from '@video-light-sync/adapters-base';
 
 export class YeelightAdapter implements LightAdapter {
+  id: string;
   name: string;
+  type: string = 'yeelight';
   private ip: string | null;
   private port: number;
   private client: net.Socket | null = null;
@@ -12,8 +14,9 @@ export class YeelightAdapter implements LightAdapter {
   private lastUpdate: number = 0;
 
   constructor(ip: string | null = null, port: number = 55443) {
-    this.name = ip ? `Yeelight (${ip})` : 'Yeelight (Mock)';
     this.ip = ip;
+    this.id = ip ? `yeelight-${ip}` : `yeelight-mock-${Math.random().toString(36).substr(2, 9)}`;
+    this.name = ip ? `Yeelight (${ip})` : 'Yeelight (Mock)';
     this.port = port;
   }
 

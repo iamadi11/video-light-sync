@@ -20,14 +20,21 @@ export class LightSyncServer {
     
     this.wss.on('connection', (ws) => {
       console.log('Client connected');
+      
+      // Send device list immediately
+      this.sendDeviceList(ws);
 
       ws.on('message', (message) => {
         try {
           // In a real app we might validate data structure here
           const str = message.toString();
+          // We support both raw LightState (legacy/simple) and ServerMessage
+          // For now, assume it's LightState from capture app
           const state = JSON.parse(str) as LightState;
           
-          this.onLightState(state);
+          if (state.timestamp) {
+             this.onLightState(state);
+          }
         } catch (e) {
           console.error('Error parsing message:', e);
         }
@@ -41,9 +48,30 @@ export class LightSyncServer {
     console.log(`LightSyncServer started on port ${this.port}`);
   }
 
+  private sendDeviceList(ws: WebSocket) {
+    if (ws.readyState === WebSocket.OPEN) {
+      const devices = this.adapters.map(a => ({
+        id: a.id,
+        name: a.name,
+        type: a.type,
+        status: 'online' as const
+      }));
+      
+      ws.send(JSON.stringify({
+        type: 'DEVICE_LIST',
+        payload: devices
+      }));
+    }
+  }
+
   private onLightState(state: LightState) {
-    // Broadcast to all connected clients (Controllers, future Desktop app, etc)
-    const msg = JSON.stringify(state);
+    // Broadcast to all connected clients
+    // We wrap it in a ServerMessage envelope
+    const msg = JSON.stringify({
+      type: 'STATE_UPDATE',
+      payload: state
+    });
+    
     this.wss.clients.forEach(client => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(msg);

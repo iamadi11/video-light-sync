@@ -11,3 +11,17 @@ export interface LightState {
   /** [r, g, b] 0-255 each. Useful for direct color setting. */
   rgb: [number, number, number];
 }
+
+export interface LightDevice {
+  id: string;
+  name: string;
+  type: string; // 'yeelight', 'hue', etc
+  status: 'online' | 'offline';
+}
+
+export type ServerMessageType = 'STATE_UPDATE' | 'DEVICE_LIST';
+
+export interface ServerMessage {
+  type: ServerMessageType;
+  payload: any;
+}

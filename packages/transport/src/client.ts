@@ -10,6 +10,7 @@ export class StreamClient {
   }
 
   private stateCallback: ((state: LightState) => void) | null = null;
+  private deviceListCallback: ((devices: any[]) => void) | null = null;
 
   connect() {
     console.log(`Connecting to ${this.url}...`);
@@ -21,13 +22,25 @@ export class StreamClient {
     };
 
     this.ws.onmessage = (event) => {
-      if (this.stateCallback) {
-        try {
-          const state = JSON.parse(event.data.toString()) as LightState;
-          this.stateCallback(state);
-        } catch (e) {
-          console.error('Error parsing incoming state:', e);
+      try {
+        const data = JSON.parse(event.data.toString());
+        
+        // Handle legacy LightState direct broadcast (backward compat if needed, or if server sends raw)
+        // Check if it has 'brightness' property directly
+        if (data.brightness !== undefined && this.stateCallback) {
+          this.stateCallback(data as LightState);
+          return;
         }
+
+        // Handle ServerMessage envelope
+        if (data.type === 'STATE_UPDATE' && this.stateCallback) {
+          this.stateCallback(data.payload);
+        } else if (data.type === 'DEVICE_LIST' && this.deviceListCallback) {
+          this.deviceListCallback(data.payload);
+        }
+
+      } catch (e) {
+        console.error('Error parsing incoming message:', e);
       }
     };
 
@@ -44,6 +57,10 @@ export class StreamClient {
 
   onState(callback: (state: LightState) => void) {
     this.stateCallback = callback;
+  }
+  
+  onDeviceList(callback: (devices: any[]) => void) {
+    this.deviceListCallback = callback;
   }
 
   sendState(state: LightState) {
