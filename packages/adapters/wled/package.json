@@ -1,6 +1,7 @@
 {
   "name": "@video-light-sync/adapters-wled",
   "version": "0.0.1",
+  "description": "WLED (DRGB/UDP) adapter for Video Light Sync.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

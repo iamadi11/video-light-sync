@@ -1,8 +1,12 @@
 {
   "name": "@video-light-sync/adapters-yeelight",
   "version": "0.0.1",
+  "description": "Yeelight LAN Control adapter.",
   "type": "module",
   "main": "./src/YeelightAdapter.ts",
+  "scripts": {
+    "build": "tsc"
+  },
   "exports": {
     ".": "./src/YeelightAdapter.ts"
   },

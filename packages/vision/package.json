@@ -1,6 +1,7 @@
 {
   "name": "@video-light-sync/vision",
   "version": "0.0.1",
+  "description": "Frame processing and temporal smoothing engine.",
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
