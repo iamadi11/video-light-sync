@@ -15,7 +15,8 @@
     "@video-light-sync/adapters-wled": "workspace:*"
   },
   "devDependencies": {
-    "@types/ws": "^8.5.10"
+    "@types/ws": "^8.5.10",
+    "ts-node": "^10.9.1"
   },
   "scripts": {
     "build": "tsc",
