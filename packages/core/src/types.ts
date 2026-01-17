@@ -15,8 +15,9 @@ export interface LightState {
 export interface LightDevice {
   id: string;
   name: string;
-  type: string; // 'yeelight', 'hue', etc
+  type: string; // 'yeelight', 'hue', 'wled', etc
   status: 'online' | 'offline';
+  zone?: string; // e.g. 'Living Room', 'Desk'
 }
 
 export type ServerMessageType = 'STATE_UPDATE' | 'DEVICE_LIST';

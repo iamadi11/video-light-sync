@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron';
 import path from 'path';
 import { LightSyncServer } from '@video-light-sync/transport';
 import { YeelightAdapter } from '@video-light-sync/adapters-yeelight';
+import { WledAdapter } from '@video-light-sync/adapters-wled';
 
 // Keep server instance global so it doesn't get GC'd
 let server: LightSyncServer | null = null;
@@ -9,8 +10,9 @@ let mainWindow: BrowserWindow | null = null;
 
 function startHub() {
   try {
-    const yeelight = new YeelightAdapter(null); // Mock for now, or scan later
-    server = new LightSyncServer(3001, [yeelight]);
+    const yeelight = new YeelightAdapter(null); // Mock
+    const wled = new WledAdapter(null); // Mock
+    server = new LightSyncServer(3001, [yeelight, wled]);
     console.log('[Desktop] Hub started on port 3001');
   } catch (e) {
     console.error('[Desktop] Failed to start hub:', e);

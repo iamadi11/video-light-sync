@@ -51,6 +51,9 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@video-light-sync/adapters-wled':
+        specifier: workspace:*
+        version: link:../../packages/adapters/wled
       '@video-light-sync/adapters-yeelight':
         specifier: workspace:*
         version: link:../../packages/adapters/yeelight
@@ -99,6 +102,22 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/adapters/wled:
+    dependencies:
+      '@video-light-sync/adapters-base':
+        specifier: workspace:*
+        version: link:../base
+      '@video-light-sync/core':
+        specifier: workspace:*
+        version: link:../../core
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.30
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
   packages/adapters/yeelight:
     dependencies:
       '@video-light-sync/adapters-base':
@@ -119,6 +138,9 @@ importers:
       '@video-light-sync/adapters-base':
         specifier: workspace:*
         version: link:../adapters/base
+      '@video-light-sync/adapters-wled':
+        specifier: workspace:*
+        version: link:../adapters/wled
       '@video-light-sync/adapters-yeelight':
         specifier: workspace:*
         version: link:../adapters/yeelight

@@ -1,0 +1,18 @@
+{
+  "name": "@video-light-sync/adapters-wled",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "@video-light-sync/core": "workspace:*",
+    "@video-light-sync/adapters-base": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.3"
+  }
+}
