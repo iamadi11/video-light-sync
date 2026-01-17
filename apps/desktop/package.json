@@ -2,20 +2,39 @@
   "name": "desktop",
   "private": true,
   "version": "0.0.1",
+  "description": "Video Light Sync Hub Application",
+  "author": "Aditya Raj",
   "main": "dist-electron/main.js",
   "scripts": {
     "build": "tsc -p tsconfig.node.json",
     "dev": "tsc -p tsconfig.node.json && electron .",
-    "start": "electron ."
+    "start": "electron .",
+    "package": "electron-builder"
+  },
+  "build": {
+    "appId": "com.videolightsync.hub",
+    "productName": "Video Light Sync Hub",
+    "directories": {
+      "output": "dist-app"
+    },
+    "mac": {
+      "category": "public.app-category.utilities"
+    },
+    "files": [
+      "dist-electron/**/*",
+      "electron/**/*",
+      "package.json"
+    ]
   },
   "dependencies": {
-    "electron": "^28.0.0",
     "@video-light-sync/transport": "workspace:*",
     "@video-light-sync/adapters-yeelight": "workspace:*",
     "@video-light-sync/adapters-wled": "workspace:*",
     "@video-light-sync/core": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.3.3"
+    "electron": "^28.0.0",
+    "typescript": "^5.3.3",
+    "electron-builder": "^24.9.1"
   }
 }

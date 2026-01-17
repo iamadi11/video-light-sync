@@ -137,3 +137,17 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Project Specific
+dist-electron/
+dist-app/
+release/
+*.dmg
+*.zip
+*.app
+*.drgb
+.DS_Store
+Thumbs.db
+*.pem
+.idea/
+.vscode/

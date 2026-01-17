@@ -3,7 +3,9 @@
   "compilerOptions": {
     "outDir": "dist",
     "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "moduleResolution": "NodeNext",
+    "noEmit": false,
+    "allowImportingTsExtensions": false
   },
   "include": ["src"],
   "references": [

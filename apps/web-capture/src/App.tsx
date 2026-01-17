@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ScreenRecorder } from './capture/ScreenRecorder';
 import { FrameBuffer } from './capture/FrameBuffer';
 import { FrameProcessor } from '@video-light-sync/vision';
@@ -47,7 +47,9 @@ function App() {
       const lightState = processor.process(frameBuffer.getCanvas());
       
       // Send to server
-      client.sendState(lightState);
+      if (lightState) {
+        client.sendState(lightState);
+      }
 
       if (Math.random() < 0.01) { 
          // Console log less frequently now that we are streaming

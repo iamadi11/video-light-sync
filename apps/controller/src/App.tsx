@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StreamClient } from '@video-light-sync/transport';
 import { LightState, LightDevice } from '@video-light-sync/core';
 

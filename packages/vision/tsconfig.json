@@ -1,9 +1,12 @@
 {
   "extends": "../../tools/tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist"
+    "outDir": "dist",
+    "noEmit": false,
+    "allowImportingTsExtensions": false
   },
   "include": ["src"],
+  "exclude": ["src/**/*.test.ts"],
   "references": [
     { "path": "../core" }
   ]

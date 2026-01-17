@@ -17,6 +17,7 @@
       "@video-light-sync/*": ["../../packages/*/src"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "../../packages/*/src"],
+  "exclude": ["**/*.test.ts", "../../packages/*/src/**/*.test.ts"],
   "references": []
 }
