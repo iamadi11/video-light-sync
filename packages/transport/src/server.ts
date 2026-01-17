@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import { LightState } from '@video-light-sync/core';
+import { LightState, ZLightState, ZServerMessage } from '@video-light-sync/core';
 import { LightAdapter } from '@video-light-sync/adapters-base';
 
 export class LightSyncServer {
@@ -26,15 +26,23 @@ export class LightSyncServer {
 
       ws.on('message', (message) => {
         try {
-          // In a real app we might validate data structure here
           const str = message.toString();
-          // We support both raw LightState (legacy/simple) and ServerMessage
-          // For now, assume it's LightState from capture app
-          const state = JSON.parse(str) as LightState;
           
-          if (state.timestamp) {
-             this.onLightState(state);
+          // 1. Try envelope
+          const serverMsg = ZServerMessage.safeParse(JSON.parse(str));
+          if (serverMsg.success) {
+            // Can extend logic here
+             return;
           }
+
+          // 2. Fallback raw state
+          const lightState = ZLightState.safeParse(JSON.parse(str));
+          if (lightState.success) {
+             this.onLightState(lightState.data);
+             return;
+          }
+
+          console.warn('Invalid message format');
         } catch (e) {
           console.error('Error parsing message:', e);
         }

@@ -8,7 +8,8 @@
   },
   "dependencies": {
     "@video-light-sync/adapters-base": "workspace:*",
-    "@video-light-sync/core": "workspace:*"
+    "@video-light-sync/core": "workspace:*",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^20.10.0"

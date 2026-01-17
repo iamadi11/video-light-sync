@@ -50,9 +50,13 @@ export class WledAdapter implements LightAdapter {
       
       const buffer = Buffer.from([2, 2, r, g, b]);
       
-      this.client.send(buffer, this.port, this.ip, (err) => {
-        if (err) console.error(`[${this.name}] Send error:`, err);
-      });
+      try {
+        this.client.send(buffer, this.port, this.ip, (err) => {
+          if (err) console.error(`[${this.name}] Send error:`, err);
+        });
+      } catch (e) {
+        console.error(`[${this.name}] UDP Exception:`, e);
+      }
     } else {
       if (Math.random() < 0.05) {
         console.log(`[${this.name}] Syncing: RGB(${r},${g},${b})`);

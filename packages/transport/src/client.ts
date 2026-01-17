@@ -1,4 +1,4 @@
-import { LightState } from '@video-light-sync/core';
+import { LightState, ZLightState, ZServerMessage } from '@video-light-sync/core';
 
 export class StreamClient {
   private ws: WebSocket | null = null;
@@ -23,22 +23,26 @@ export class StreamClient {
 
     this.ws.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data.toString());
-        
-        // Handle legacy LightState direct broadcast (backward compat if needed, or if server sends raw)
-        // Check if it has 'brightness' property directly
-        if (data.brightness !== undefined && this.stateCallback) {
-          this.stateCallback(data as LightState);
+        const raw = JSON.parse(event.data.toString());
+
+        // 1. Envelope
+        const envelope = ZServerMessage.safeParse(raw);
+        if (envelope.success) {
+           const { type, payload } = envelope.data;
+           if (type === 'STATE_UPDATE' && this.stateCallback) {
+             this.stateCallback(payload);
+           } else if (type === 'DEVICE_LIST' && this.deviceListCallback) {
+             this.deviceListCallback(payload);
+           }
+           return;
+        }
+
+        // 2. Fallback raw
+        const state = ZLightState.safeParse(raw);
+        if (state.success && this.stateCallback) {
+          this.stateCallback(state.data);
           return;
         }
-
-        // Handle ServerMessage envelope
-        if (data.type === 'STATE_UPDATE' && this.stateCallback) {
-          this.stateCallback(data.payload);
-        } else if (data.type === 'DEVICE_LIST' && this.deviceListCallback) {
-          this.deviceListCallback(data.payload);
-        }
-
       } catch (e) {
         console.error('Error parsing incoming message:', e);
       }

@@ -17,6 +17,7 @@
     "@types/ws": "^8.5.10"
   },
   "scripts": {
-    "start-server": "node --loader ts-node/esm ./src/server-runner.ts" 
+    "start-server": "node --loader ts-node/esm ./src/server-runner.ts",
+    "test": "vitest run"
   }
 }

@@ -75,7 +75,14 @@ export class YeelightAdapter implements LightAdapter {
         params: [rgbInt, 'smooth', duration]
       };
       
-      this.client.write(JSON.stringify(cmd) + '\r\n');
+      try {
+        this.client.write(JSON.stringify(cmd) + '\r\n', (err) => {
+          if (err) console.error(`[${this.name}] Write error:`, err);
+        });
+      } catch (e) {
+        console.error(`[${this.name}] Socket exception:`, e);
+        this.isConnected = false; // Mark as down so we reconnect/init again if we had robustness logic
+      }
       
       // Also set brightness if it changed significantly? 
       // Yeelight set_rgb uses current brightness unless we use set_scene.
