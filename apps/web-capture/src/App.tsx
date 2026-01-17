@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ScreenRecorder } from './capture/ScreenRecorder';
 import { FrameBuffer } from './capture/FrameBuffer';
+import { FrameProcessor } from '@video-light-sync/vision';
 
 function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const debugRef = useRef<HTMLDivElement>(null);
   const [recorder, setRecorder] = useState<ScreenRecorder | null>(null);
   const [frameBuffer, setFrameBuffer] = useState<FrameBuffer | null>(null);
+  const [processor, setProcessor] = useState<FrameProcessor | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const requestRef = useRef<number>();
 
@@ -17,6 +19,9 @@ function App() {
 
       const buf = new FrameBuffer(100, 50); // Small buffer for performance
       setFrameBuffer(buf);
+      
+      const proc = new FrameProcessor({ sampleStride: 4 });
+      setProcessor(proc);
 
       if (debugRef.current) {
         buf.mountDebug(debugRef.current);
@@ -29,12 +34,18 @@ function App() {
   }, [videoRef]);
 
   const loop = () => {
-    if (videoRef.current && frameBuffer) {
+    if (videoRef.current && frameBuffer && processor) {
       // 1. Write video frame to buffer
       frameBuffer.write(videoRef.current);
 
-      // 2. (Next Phase) Read buffer and calculate LightState
-      // console.log('Frame processed');
+      // 2. Read buffer and calculate LightState
+      const lightState = processor.process(frameBuffer.getCanvas());
+      
+      // Validation log (throttled visually but calculate every frame)
+      // For now, spamming console is fine for validation phase
+      if (Math.random() < 0.05) { // Log 5% of frames to avoid laggy console
+         console.log('LightState:', lightState);
+      }
     }
     requestRef.current = requestAnimationFrame(loop);
   };
