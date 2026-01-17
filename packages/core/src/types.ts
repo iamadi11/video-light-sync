@@ -1,28 +1,36 @@
-export interface LightState {
-  timestamp: number;
-  /** 0.0 to 1.0 */
-  brightness: number;
-  /** 0.0 (cool) to 1.0 (warm) */
-  warmth: number;
-  /** 0.0 to 1.0 (optional) */
-  saturation?: number;
-  /** 0-360 (optional) */
-  hue?: number;
-  /** [r, g, b] 0-255 each. Useful for direct color setting. */
-  rgb: [number, number, number];
-}
+import { z } from 'zod';
 
-export interface LightDevice {
-  id: string;
-  name: string;
-  type: string; // 'yeelight', 'hue', 'wled', etc
-  status: 'online' | 'offline';
-  zone?: string; // e.g. 'Living Room', 'Desk'
-}
+export const ZLightState = z.object({
+  timestamp: z.number(),
+  brightness: z.number().min(0).max(1),
+  warmth: z.number().min(0).max(1),
+  saturation: z.number().min(0).max(1).optional(),
+  hue: z.number().min(0).max(360).optional(),
+  rgb: z.tuple([
+    z.number().int().min(0).max(255),
+    z.number().int().min(0).max(255),
+    z.number().int().min(0).max(255)
+  ])
+});
 
-export type ServerMessageType = 'STATE_UPDATE' | 'DEVICE_LIST';
+export type LightState = z.infer<typeof ZLightState>;
 
-export interface ServerMessage {
-  type: ServerMessageType;
-  payload: any;
-}
+export const ZLightDevice = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.string(),
+  status: z.enum(['online', 'offline']),
+  zone: z.string().optional()
+});
+
+export type LightDevice = z.infer<typeof ZLightDevice>;
+
+export const ZServerMessageType = z.enum(['STATE_UPDATE', 'DEVICE_LIST']);
+export type ServerMessageType = z.infer<typeof ZServerMessageType>;
+
+export const ZServerMessage = z.object({
+  type: ZServerMessageType,
+  payload: z.any()
+});
+
+export type ServerMessage = z.infer<typeof ZServerMessage>;

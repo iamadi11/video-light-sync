@@ -87,7 +87,10 @@ export class FrameProcessor {
         }
     }
 
-    this.lastSentState = smoothedState;
     return smoothedState;
+  }
+
+  dispose(): void {
+    this.lastSentState = null;
   }
 }

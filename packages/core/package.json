@@ -3,7 +3,15 @@
   "version": "0.0.1",
   "type": "module",
   "main": "./src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w",
+    "test": "vitest run"
+  },
   "exports": {
     ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "zod": "^3.22.4"
   }
 }

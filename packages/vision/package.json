@@ -6,6 +6,11 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w",
+    "test": "vitest run"
+  },
   "dependencies": {
     "@video-light-sync/core": "workspace:*"
   }
