@@ -68,10 +68,11 @@ export class YeelightAdapter implements LightAdapter {
       // We use "set_scene" ["color", rgb, brightness] for smoothest transitions if supported,
       // or set_rgb + set_bright. 
       // "set_rgb" command: [rgb_value, "smooth", duration]
+      const duration = 300; // 300ms smoothing
       const cmd = {
         id: this.requestId++,
         method: 'set_rgb',
-        params: [rgbInt, 'smooth', 100]
+        params: [rgbInt, 'smooth', duration]
       };
       
       this.client.write(JSON.stringify(cmd) + '\r\n');

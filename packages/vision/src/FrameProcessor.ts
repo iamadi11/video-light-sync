@@ -1,14 +1,22 @@
 import { LightState } from '@video-light-sync/core';
+import { TemporalSmoother } from './TemporalSmoother';
 
 export class FrameProcessor {
   // Optimization: Only process every Nth pixel to save CPU
   private sampleStride: number;
+  private smoother: TemporalSmoother;
+  private lastSentState: LightState | null = null;
+
+  // Thresholds
+  private rgbThreshold = 5; // cumulative RGB difference required
+  private brightnessThreshold = 0.05; // 5% brightness diff required
 
   constructor(options: { sampleStride?: number } = {}) {
     this.sampleStride = options.sampleStride || 4;
+    this.smoother = new TemporalSmoother(0.15); // Fairly smooth
   }
 
-  process(canvas: HTMLCanvasElement | OffscreenCanvas): LightState {
+  process(canvas: HTMLCanvasElement | OffscreenCanvas): LightState | null {
     const width = canvas.width;
     const height = canvas.height;
     
@@ -56,11 +64,30 @@ export class FrameProcessor {
       warmth = r / (r + b); 
     }
 
-    return {
+    const rawState: LightState = {
       timestamp: Date.now(),
       rgb: [r, g, b],
       brightness: parseFloat(luminance.toFixed(3)),
       warmth: parseFloat(warmth.toFixed(3)),
     };
+
+    // Smooth
+    const smoothedState = this.smoother.smooth(rawState);
+
+    // Diff Check (Optimization)
+    if (this.lastSentState) {
+        const dR = Math.abs(smoothedState.rgb[0] - this.lastSentState.rgb[0]);
+        const dG = Math.abs(smoothedState.rgb[1] - this.lastSentState.rgb[1]);
+        const dB = Math.abs(smoothedState.rgb[2] - this.lastSentState.rgb[2]);
+        const dBri = Math.abs(smoothedState.brightness - this.lastSentState.brightness);
+
+        if ((dR + dG + dB) < this.rgbThreshold && dBri < this.brightnessThreshold) {
+            // Change is too small, ignore
+            return null; 
+        }
+    }
+
+    this.lastSentState = smoothedState;
+    return smoothedState;
   }
 }
